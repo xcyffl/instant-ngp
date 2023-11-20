@@ -21,9 +21,14 @@
 #include <tiny-cuda-nn/common.h>
 
 NGP_NAMESPACE_BEGIN
-
+// For triangle struct, a, b, and c are the 3D coordinates of its locations.
 struct Triangle {
 	NGP_HOST_DEVICE vec3 sample_uniform_position(const vec2& sample) const {
+		// This function would be sampling within the triangle.
+		// Returns the barycentric coordinate within the triangle.
+		// Sampled with uniform probability.
+		// All needs to sum to one.
+		// 
 		float sqrt_x = std::sqrt(sample.x);
 		float factor0 = 1.0f - sqrt_x;
 		float factor1 = sqrt_x * (1.0f - sample.y);
@@ -31,16 +36,17 @@ struct Triangle {
 
 		return factor0 * a + factor1 * b + factor2 * c;
 	}
-
+	// Computing the surface area of the triangle.
 	NGP_HOST_DEVICE float surface_area() const {
 		return 0.5f * length(cross(b - a, c - a));
 	}
-
+	// Computing the normal of the triangle.
 	NGP_HOST_DEVICE vec3 normal() const {
 		return normalize(cross(b - a, c - a));
 	}
 
 	// based on https://www.iquilezles.org/www/articles/intersectors/intersectors.htm
+	// Computing ray-triangle intersection.
 	NGP_HOST_DEVICE float ray_intersect(const vec3 &ro, const vec3 &rd, vec3& n) const {
 		vec3 v1v0 = b - a;
 		vec3 v2v0 = c - a;
@@ -56,13 +62,14 @@ struct Triangle {
 		}
 		return t;
 	}
-
+	// Why not define n in the above method?
 	NGP_HOST_DEVICE float ray_intersect(const vec3 &ro, const vec3 &rd) const {
 		vec3 n;
 		return ray_intersect(ro, rd, n);
 	}
 
 	// based on https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+	// Compute distance between a point and the triangle.
 	NGP_HOST_DEVICE float distance_sq(const vec3& pos) const {
 		vec3 v21 = b - a; vec3 p1 = pos - a;
 		vec3 v32 = c - b; vec3 p2 = pos - b;
@@ -83,11 +90,11 @@ struct Triangle {
 			// 1 face
 			dot(nor, p1) * dot(nor, p1) / length2(nor);
 	}
-
+	
 	NGP_HOST_DEVICE float distance(const vec3& pos) const {
 		return std::sqrt(distance_sq(pos));
 	}
-
+	// Check if the point is inside the triangle or outside.
 	NGP_HOST_DEVICE bool point_in_triangle(const vec3& p) const {
 		// Move the triangle so that the point becomes the
 		// triangles origin
@@ -113,13 +120,13 @@ struct Triangle {
 		// If yes, the point is inside, otherwise it isn't.
 		return dot(u, v) >= 0.0f && dot(u, w) >= 0.0f;
 	}
-
+	// Finding the point on a line
 	NGP_HOST_DEVICE vec3 closest_point_to_line(const vec3& a, const vec3& b, const vec3& c) const {
 		float t = dot(c - a, b - a) / dot(b - a, b - a);
 		t = std::max(std::min(t, 1.0f), 0.0f);
 		return a + t * (b - a);
 	}
-
+	// Finding the distance between the point to each of the triangle's edge and return the smallest distance. 
 	NGP_HOST_DEVICE vec3 closest_point(vec3 point) const {
 		point -= dot(normal(), point - a) * normal();
 
@@ -145,15 +152,15 @@ struct Triangle {
 			return c3;
 		}
 	}
-
+	// Computing the centroid of the triangle.
 	NGP_HOST_DEVICE vec3 centroid() const {
 		return (a + b + c) / 3.0f;
 	}
-
+	// Computing the centroid of the given dim. 
 	NGP_HOST_DEVICE float centroid(int axis) const {
 		return (a[axis] + b[axis] + c[axis]) / 3;
 	}
-
+	// getter
 	NGP_HOST_DEVICE void get_vertices(vec3 v[3]) const {
 		v[0] = a;
 		v[1] = b;
