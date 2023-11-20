@@ -24,13 +24,13 @@
 #include <memory>
 
 NGP_NAMESPACE_BEGIN
-
+// Struct for each node of the bvh tree, having the bounding box of the current node, as well as left and right indices.
 struct TriangleBvhNode {
 	BoundingBox bb;
 	int left_idx; // negative values indicate leaves
 	int right_idx;
 };
-
+// Stack with the fixed size. 
 template <typename T, int MAX_SIZE=32>
 class FixedStack {
 public:
@@ -56,9 +56,9 @@ private:
 
 using FixedIntStack = FixedStack<int>;
 
-
+// Triangle ray intersecting returns a pair. 
 __host__ __device__ std::pair<int, float> trianglebvh_ray_intersect(const vec3& ro, const vec3& rd, const TriangleBvhNode* __restrict__ bvhnodes, const Triangle* __restrict__ triangles);
-
+// Class definition. 
 class TriangleBvh {
 public:
 	virtual void signed_distance_gpu(uint32_t n_elements, EMeshSdfMode mode, const vec3* gpu_positions, float* gpu_distances, const Triangle* gpu_triangles, bool use_existing_distances_as_upper_bounds, cudaStream_t stream) = 0;
