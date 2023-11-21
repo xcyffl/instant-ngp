@@ -114,6 +114,7 @@ public:
 		ThreadPool pool;
 
 		// Only generate nodes up to max_depth-1! The dual nodes will truly reach to the max depth
+		// For each depth, initialize the struct for each child that touches the triangle. 
 		for (uint8_t depth = 0; depth < max_depth-1; ++depth) {
 			int n_pending_nodes_to_build = node_counter - n_nodes;
 
@@ -138,7 +139,7 @@ public:
 					if (i&4) ++child_pos.z;
 
 					BoundingBox bb = {size * vec3(child_pos), size * vec3(child_pos + u16vec3(1))};
-
+					// If this node does not touch the triangle do not set it. 
 					if (!bvh.touches_triangle(bb, triangles.data())) {
 						m_nodes[parent_idx].children[i] = -1;
 						continue;
@@ -155,7 +156,7 @@ public:
 				}
 			});
 		}
-
+		// End the depth for loop. 
 		m_dual_nodes.resize(node_counter);
 
 		tlog::success() << "Built TriangleOctree: depth=" << max_depth << " nodes=" << m_nodes.size() << " dual_nodes=" << m_dual_nodes.size() << ". Populating dual nodes...";
@@ -170,16 +171,18 @@ public:
 				if (i&1) ++coord.x;
 				if (i&2) ++coord.y;
 				if (i&4) ++coord.z;
-
+				// p is a pair, where the first is an iterator of the inserted, and second is insertion true or false.
+				// iterator point to the newly inserted element in the container or to the repeated element. 
 				auto p = coords.insert({coord, m_n_vertices});
+				// Increment only if the insertion was successful. 
 				if (p.second) {
 					++m_n_vertices;
 				}
-
+				// return the m_n_vertices.
 				dual_node.vertices[i] = p.first->second;
 			}
 		};
-
+		// Setting the root. 
 		generate_dual_coords(m_dual_nodes[0], 0, {0, 0, 0});
 		for (auto& node : m_nodes) {
 			for (uint32_t i = 0; i < 8; ++i) {
