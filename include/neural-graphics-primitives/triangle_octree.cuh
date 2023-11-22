@@ -165,6 +165,7 @@ public:
 		std::unordered_map<u16vec4, uint32_t> coords;
 		coords.reserve(m_dual_nodes.size()*8);
 		m_n_vertices = 0;
+		// Why having this dual node step?
 		auto generate_dual_coords = [&](TriangleOctreeDualNode& dual_node, int depth, const u16vec3 pos) {
 			for (uint32_t i = 0; i < 8; ++i) {
 				u16vec4 coord = {(uint16_t)pos.x, (uint16_t)pos.y, (uint16_t)pos.z, (uint16_t)depth};
@@ -179,11 +180,13 @@ public:
 					++m_n_vertices;
 				}
 				// return the m_n_vertices.
+				// Contains how many vertices are before this dual node. 
 				dual_node.vertices[i] = p.first->second;
 			}
 		};
 		// Setting the root. 
 		generate_dual_coords(m_dual_nodes[0], 0, {0, 0, 0});
+		// For each of m_nodes, and its all eight children, finding additional coordinates for each of them. 
 		for (auto& node : m_nodes) {
 			for (uint32_t i = 0; i < 8; ++i) {
 				auto child_idx = node.children[i];
@@ -205,7 +208,7 @@ public:
 		m_nodes_gpu.resize_and_copy_from_host(m_nodes);
 		m_dual_nodes_gpu.resize_and_copy_from_host(m_dual_nodes);
 	}
-
+	// Getter methods, return depth, number of vertices, number of nodes, and number of dual_nodes. 
 	uint32_t depth() const {
 		return m_depth;
 	}
@@ -227,6 +230,7 @@ public:
 		int node_idx = 0;
 
 		for (uint8_t depth = 0; true; ++depth) {
+			// Performing function on dual nodes. 
 			fun(dual_nodes[node_idx], depth, pos);
 
 			// Dual nodes are one layer deeper than regular nodes
@@ -237,7 +241,9 @@ public:
 			// Traverse
 
 			uint8_t child_in_node = 0;
-
+			// Iterate through child in nodes based on the provided pos
+ 			// Performing this operation in the binary search manner using .5 as threshold.
+			// Using pos as the starting point, each time the next node index will be chosen based on it. 
 			NGP_PRAGMA_UNROLL
 			for (uint8_t i = 0; i < 3; ++i) {
 				if (pos[i] >= 0.5f) {
@@ -256,7 +262,9 @@ public:
 		}
 		return max_depth;
 	}
-
+	// Check for the given octree, starting from the current node, iterate through all depth.
+	// If children are continuously presented in based on the current position at then it contains
+	// otherwise, it does not contains. 
 	__device__ static bool contains(const TriangleOctreeNode* nodes, int max_depth, vec3 pos) {
 		const TriangleOctreeNode* node = &nodes[0];
 
