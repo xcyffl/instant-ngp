@@ -24,7 +24,7 @@
 #include <tiny-cuda-nn/random.h>
 
 NGP_NAMESPACE_BEGIN
-
+// Having two types of nodes, one octree_nodes, one dual_nodes.
 template <typename T, uint32_t N_FEATURES_PER_LEVEL>
 __global__ void kernel_takikawa(
 	const uint32_t num_elements,
@@ -39,7 +39,7 @@ __global__ void kernel_takikawa(
 	float* __restrict__ dy_dx
 ) {
 	uint32_t n_features = N_FEATURES_PER_LEVEL * n_levels;
-
+	// Get the current thread index.
 	uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
 	const uint32_t encoded_index = i * n_features;
 	if (encoded_index >= num_elements * n_features) return;
